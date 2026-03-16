@@ -1,3 +1,6 @@
 {
-  "hello_org": "Hello {name}!"
+  "hello_org": "Hello {name}!",
+  "nested_json_keys":{
+    "key1": "Hello world from key1"
+  }
 }
