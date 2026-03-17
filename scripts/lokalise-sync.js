@@ -18,8 +18,8 @@ const fs = require("fs");
 const path = require("path");
 const { execSync } = require("child_process");
 
-const API_TOKEN = "edd401b0aea42a75c3d855b5dc3d6d5cd4933931";
-const PROJECT_ID = "9941917969b80a91ef9056.44465627";
+const API_TOKEN = process.env.LOKALISE_API_TOKEN;
+const PROJECT_ID = process.env.LOKALISE_PROJECT_ID;
 const BASE_LANG = "en";
 const LOCALE_DIR = path.resolve("./locale/en");
 const POLL_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
