@@ -1,7 +1,0 @@
-{
-    "hello_org": "Hallo {name}!",
-    "nested_json_keys": {
-        "key1": "Hallo Welt von key1",
-        "key2": "Hallo Welt von key2"
-    }
-}

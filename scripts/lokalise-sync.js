@@ -373,7 +373,7 @@ async function downloadTranslations() {
 
   const zipPath = "/tmp/lokalise-bundle.zip";
   await downloadFile(bundleUrl, zipPath);
-  execSync(`unzip -o ${zipPath} -d .`);
+  execSync(`unzip -o ${zipPath} -d ./locale`);
   fs.unlinkSync(zipPath);
 
   console.log("Translations downloaded and extracted.");
