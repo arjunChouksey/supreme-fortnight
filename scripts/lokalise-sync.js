@@ -277,6 +277,7 @@ async function push() {
     },
     { depth: null },
   );
+  return;
 
   for (let i = 0; i < toCreate.length; i += 500) {
     const res = await apiRequest("POST", `/projects/${PROJECT_ID}/keys`, {

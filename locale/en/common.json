@@ -1,7 +1,10 @@
 {
-    "hello_org": "Hello {name}!",
-    "nested_json_keys": {
-        "key1": "Hello world from key1",
-        "key2": "Hello world from key2"
-    }
+  "hello_org": "Hello {name}!",
+  "nested_json_keys": {
+    "key1": "Hello world from key1 to hello world from key-new",
+    "key2": "Hello world from key2"
+  },
+  "nested_json_keys_new": {
+    "key3": "Hello world from key3"
+  }
 }
