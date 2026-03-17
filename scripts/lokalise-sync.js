@@ -232,8 +232,7 @@ async function push() {
     const existing = await listAllKeys({
       filter_keys: Object.keys(updated).join(","),
     });
-    const existingByName = new Map(existing.map((k) => [k.key_name, k]));
-
+    const existingByName = new Map(existing.map((k) => [k.key_name.web, k]));
     for (const [keyName, { translation, fileName }] of Object.entries(
       updated,
     )) {
@@ -270,15 +269,6 @@ async function push() {
     }
   }
 
-  console.dir(
-    {
-      toCreate,
-      toUpdate,
-    },
-    { depth: null },
-  );
-  return;
-
   for (let i = 0; i < toCreate.length; i += 500) {
     const res = await apiRequest("POST", `/projects/${PROJECT_ID}/keys`, {
       keys: toCreate.slice(i, i + 500),
@@ -287,20 +277,12 @@ async function push() {
     else console.log(`Created ${res.keys?.length} key(s)`);
   }
 
-  for (let i = 0; i < toUpdate.length; i += 10) {
-    await Promise.all(
-      toUpdate
-        .slice(i, i + 10)
-        .map(({ key_id, ...payload }) =>
-          apiRequest(
-            "PUT",
-            `/projects/${PROJECT_ID}/keys/${key_id}`,
-            payload,
-          ).catch((err) =>
-            console.error(`Update error for key ${key_id}:`, err.message),
-          ),
-        ),
-    );
+  for (let i = 0; i < toUpdate.length; i += 500) {
+    const res = await apiRequest("PUT", `/projects/${PROJECT_ID}/keys`, {
+      keys: toUpdate.slice(i, i + 500),
+    });
+    if (res.errors?.length) console.error("Update errors:", res.errors);
+    else console.log(`Updated ${res.keys?.length} key(s)`);
   }
 
   console.log(
