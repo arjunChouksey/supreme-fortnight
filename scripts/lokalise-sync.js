@@ -22,8 +22,8 @@ const API_TOKEN = "edd401b0aea42a75c3d855b5dc3d6d5cd4933931";
 const PROJECT_ID = "9941917969b80a91ef9056.44465627";
 const BASE_LANG = "en";
 const LOCALE_DIR = path.resolve("./locale/en");
-const POLL_INTERVAL_MS = 5 * 60 * 1000; // 10 minutes
-const MAX_POLL_ATTEMPTS = 12; // 1 hour max
+const POLL_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
+const MAX_POLL_ATTEMPTS = 24; // 1 day
 
 const [, , command, ...rawArgs] = process.argv;
 
@@ -391,7 +391,7 @@ async function sync() {
   }
 
   throw new Error(
-    `Timed out after ${MAX_POLL_ATTEMPTS} hours waiting for translations.`,
+    `Timed out after ${MAX_POLL_ATTEMPTS} hours waiting for translations. Check with lokalise admins to see if there are any pending review  for translation keys with the translations for PR "${PR_NAME}".`,
   );
 }
 
