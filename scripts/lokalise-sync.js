@@ -18,12 +18,12 @@ const fs = require("fs");
 const path = require("path");
 const { execSync } = require("child_process");
 
-const API_TOKEN = "bee71333209eda1043c92430f86a5fd9e2524750";
-const PROJECT_ID = "4166601769b80f1cb7c410.02221382";
+const API_TOKEN = "edd401b0aea42a75c3d855b5dc3d6d5cd4933931";
+const PROJECT_ID = "9941917969b80a91ef9056.44465627";
 const BASE_LANG = "en";
 const LOCALE_DIR = path.resolve("./locale/en");
-const POLL_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
-const MAX_POLL_ATTEMPTS = 6; // 6 hours max
+const POLL_INTERVAL_MS = 5 * 60 * 1000; // 10 minutes
+const MAX_POLL_ATTEMPTS = 12; // 1 hour max
 
 const [, , command, ...rawArgs] = process.argv;
 
@@ -132,15 +132,24 @@ function getChangedKeys(baseRef) {
     try {
       const oldJson = execSync(`git show ${baseRef}:${gitPath}`, {
         encoding: "utf8",
+        stdio: "pipe", // suppress fatal: stderr message when file is new
       });
       oldFlat = flattenJSON(JSON.parse(oldJson));
     } catch {
       // File is new on this branch — all its keys are added
+      console.warn(
+        `File ${gitPath} not found in ${baseRef} — treating all keys as new.`,
+      );
     }
 
-    const newFlat = flattenJSON(
-      JSON.parse(fs.readFileSync(path.join(LOCALE_DIR, fileName), "utf8")),
-    );
+    let newFlat = {};
+    try {
+      const raw = fs.readFileSync(path.join(LOCALE_DIR, fileName), "utf8");
+      newFlat = flattenJSON(JSON.parse(raw));
+    } catch (err) {
+      console.warn(`Skipping ${fileName}: ${err.message}`);
+      continue;
+    }
 
     for (const [key, translation] of Object.entries(newFlat)) {
       if (!(key in oldFlat)) {
@@ -190,7 +199,9 @@ async function push() {
   const addedCount = Object.keys(added).length;
   const updatedCount = Object.keys(updated).length;
 
-  console.log(`Git diff: ${addedCount} added, ${updatedCount} updated`);
+  console.log(
+    `Git diff for translation keys: ${addedCount} added, ${updatedCount} updated`,
+  );
 
   if (addedCount === 0 && updatedCount === 0) {
     console.log("No key changes in git diff — nothing pushed.");
@@ -204,7 +215,14 @@ async function push() {
       platforms: ["web"],
       filenames: { web: fileName },
       tags: [PR_NAME],
-      translations: { [BASE_LANG]: { translation } },
+      translations: [
+        {
+          language_iso: BASE_LANG,
+          translation: translation,
+          is_reviewed: false,
+          is_unverified: false,
+        },
+      ],
     }),
   );
 
@@ -219,22 +237,34 @@ async function push() {
     for (const [keyName, { translation, fileName }] of Object.entries(
       updated,
     )) {
+      const baseObject = {
+        translations: [
+          {
+            language_iso: BASE_LANG,
+            translation: translation,
+            is_reviewed: false,
+            is_unverified: false,
+          },
+        ],
+      };
       const found = existingByName.get(keyName);
       if (found) {
         toUpdate.push({
           key_id: found.key_id,
           filenames: { web: fileName },
           tags: [...new Set([...(found.tags || []), PR_NAME])],
-          translations: { [BASE_LANG]: { translation } },
+          ...baseObject,
         });
       } else {
         // Not in Lokalise yet — create instead
         toCreate.push({
           key_name: keyName,
           platforms: ["web"],
-          filenames: { web: fileName },
           tags: [PR_NAME],
-          translations: { [BASE_LANG]: { translation } },
+          filenames: { web: fileName },
+          ...baseObject,
+          is_archived: false,
+          is_hidden: false,
         });
       }
     }
@@ -242,15 +272,11 @@ async function push() {
 
   console.dir(
     {
-      added,
-      updated,
       toCreate,
       toUpdate,
     },
     { depth: null },
   );
-
-  return false;
 
   for (let i = 0; i < toCreate.length; i += 500) {
     const res = await apiRequest("POST", `/projects/${PROJECT_ID}/keys`, {
